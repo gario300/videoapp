@@ -1,20 +1,34 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-
+import { SafeAreaView, StyleSheet } from 'react-native';
+import Main from './src';
+import { PaperProvider, MD3DarkTheme } from 'react-native-paper';
+import store from './src/app/store'
+import { Provider } from 'react-redux'
+import Snackbar from './src/components/SnackBar'
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <Provider
+      store={store}
+    >
+      <PaperProvider
+        theme={MD3DarkTheme}
+      >
+        <SafeAreaView
+          style={styles.container}
+        >
+          <Main/>
+          <Snackbar/>
+          <StatusBar style="auto" />
+        </SafeAreaView>
+      </PaperProvider>
+    </Provider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+    backgroundColor: "#1E1F2E",
+  }
+})
