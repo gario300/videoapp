@@ -25,7 +25,6 @@ function Historial({ navigation }) {
 
   const getVideos = async (duration) => {
     setDurationFilter(duration);
-    setVideos([]);
     try {
       setRefreshing(true);
       const user = AuthClass.getCurrentUser().uid;
