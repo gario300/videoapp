@@ -1,107 +1,101 @@
-import React, {useState, useEffect} from "react"
-import { View, FlatList } from "react-native"
+import React, { useState, useEffect, useCallback } from "react";
+import { View, FlatList } from "react-native";
 import { Text, ActivityIndicator } from "react-native-paper";
 import PropTypes from "prop-types";
 
 // Classes
-import videoClass from "../../classes/videoClass"
-import AuthClass from "../../classes/authClass"
+import videoClass from "../../classes/videoClass";
+import AuthClass from "../../classes/authClass";
 
 // Components
 import VideoPreview from "../../components/VideoPreview";
 import { Button } from "../../components";
-import EmptyList from "../../components/EmptyListElement";
+import EmptyListElement from "../../components/EmptyListElement";
 
-function Historial({navigation}){
-  const [videos, setVideos] = useState([]); 
+function Historial({ navigation }) {
+  const [videos, setVideos] = useState([]);
   const [durationFilter, setDurationFilter] = useState(10);
   const [refreshing, setRefreshing] = useState(false);
-   
-  const durationButtons = [10, 15, 30]
+
+  const durationButtons = [10, 15, 30];
+
   useEffect(() => {
-    getVideos(10)
+    getVideos(durationFilter);
   }, []);
-  
-  const getVideos = async(duration) => {
+
+  const getVideos = async (duration) => {
     setDurationFilter(duration);
     setVideos([]);
     try {
       setRefreshing(true);
       const user = AuthClass.getCurrentUser().uid;
       const videosR = await videoClass.getHistorial(user, duration);
-      setRefreshing(false);
       setVideos(videosR);
     } catch (e) {
-      setDurationFilter(prev => prev);
+      console.error("Error fetching videos:", e);
+      // Mostrar errot al usuario de ser necesario
+    } finally {
       setRefreshing(false);
-      console.log(e)
     }
-  }
-
-  const onClickVideo = async (item) => {
-    try {
-      navigation.navigate('Details',{
-        id: item.item.id
-      }) 
-    } catch (e) {
-      console.log(e)
-    }
-  }
-  
-  const renderFooter = () => {
-    return  refreshing ? <ActivityIndicator size="small" /> : null
   };
 
-  return(
-    <View
-      style={{padding: 8, flex: 1}}
-    >
-      <Button
-        icon="arrow-left"
-        title="Regresar"
-        onPress={() => navigation.goBack()}
-      />
-      <Text variant="titleMedium" style={{marginTop: 3}}>
-        Ver historial de los ultimos...
-      </Text>
+  const renderFooter = () => {
+    return refreshing ? <ActivityIndicator size="small" /> : null;
+  };
+
+  const onClickVideo = useCallback((item) => {
+    navigation.navigate('Details', { id: item.id });
+  }, [navigation]);
+
+  const renderItem = useCallback(({ item }) => (
+    <VideoPreview
+      video={item}
+      onPress={() => onClickVideo(item)}
+    />
+  ), [onClickVideo]);
+
+  const keyExtractor = useCallback((item, index) => `${item.id}_${index}`, []);
+
+  return (
+    <View style={{ flex: 1 }}>
       <View
-        style={{flexDirection: "row"}}
+        style={{padding: 8}}
       >
-        {
-          durationButtons.map((element, index) => {
-            return (
-              <Button
-                key={"duration_"+index}
-                title={element+" min"}
-                mode={element !== durationFilter ? "text" : "contained"}
-                onPress={() => getVideos(element)}
-              >
-              </Button>
-            )
-          })
-        }
+        <Button
+          icon="arrow-left"
+          title="Regresar"
+          onPress={() => navigation.goBack()}
+        />
+        <Text variant="titleMedium" style={{ marginTop: 3 }}>
+          Ver historial de los últimos...
+        </Text>
+        <View style={{ flexDirection: "row", marginTop: 8 }}>
+          {durationButtons.map((element, index) => (
+            <Button
+              key={`duration_${index}`}
+              title={`${element} min`}
+              mode={element !== durationFilter ? "text" : "contained"}
+              onPress={() => getVideos(element)}
+            />
+          ))}
+        </View>
       </View>
       <FlatList
         data={videos}
-        renderItem={(item) => {
-          return (
-            <VideoPreview
-              video={item.item}
-              onPress={() => onClickVideo(item)}
-            />
-          )
-        }}
+        contentContainerStyle={{ padding:8 }}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
         refreshing={refreshing}
         onRefresh={() => getVideos(durationFilter)}
-        ListEmptyComponent={() => <EmptyList/>}
+        ListEmptyComponent={() => <EmptyListElement />}
         ListFooterComponent={renderFooter}
       />
     </View>
-  )
+  );
 }
 
 Historial.propTypes = {
-  navigation: PropTypes.object
-}
+  navigation: PropTypes.object.isRequired,
+};
 
-export default Historial
+export default Historial;
